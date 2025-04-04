@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Serial API ポート列挙</title>
+  </head>
+  <body>
+    <h1>シリアルポート列挙</h1>
+    <button id="listPorts">ポートを列挙</button>
+    <ul id="portList"></ul>
+
+    <script>
+      document
+        .getElementById("listPorts")
+        .addEventListener("click", async () => {
+          // ブラウザがWeb Serial APIをサポートしているか確認
+          if (!navigator.serial) {
+            alert("Web Serial APIはこのブラウザでサポートされていません。");
+            return;
+          }
+
+          try {
+            // ユーザーにポート選択をリクエスト
+            const ports = await navigator.serial.requestPort();
+            const portList = document.getElementById("portList");
+
+            // UIにポート情報を表示
+            const listItem = document.createElement("li");
+            listItem.textContent = `ポート: ${
+              ports.getInfo().usbProductId || "不明"
+            }`;
+            portList.appendChild(listItem);
+          } catch (err) {
+            console.error("ポート列挙中にエラー:", err);
+            alert("ポート列挙に失敗しました。");
+          }
+        });
+    </script>
+  </body>
+</html>
