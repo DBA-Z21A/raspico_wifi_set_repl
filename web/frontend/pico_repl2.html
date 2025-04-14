@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Raspberry Pi Pico W REPL</title>
+    <style>
+      #sentLog {
+        border: 1px solid green;
+        height: 100px;
+        overflow-y: scroll;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+      #receivedLog {
+        background-color: black;
+        color: white;
+        height: 150px;
+        overflow-y: scroll;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Raspberry Pi Pico W REPL</h1>
+
+    <div>
+      <button id="connectButton">接続</button>
+      <button id="disconnectButton" disabled>切断</button>
+    </div>
+
+    <div>
+      <h2>送信履歴</h2>
+      <div id="sentLog"></div>
+    </div>
+
+    <div>
+      <h2>受信結果</h2>
+      <pre id="receivedLog"></pre>
+    </div>
+
+    <button id="sendCommandButton" disabled>バージョン確認</button>
+
+    <script>
+      const sentLogDiv = document.getElementById("sentLog");
+      const receivedLogDiv = document.getElementById("receivedLog");
+      const connectButton = document.getElementById("connectButton");
+      const disconnectButton = document.getElementById("disconnectButton");
+      const sendCommandButton = document.getElementById("sendCommandButton");
+
+      let port = null;
+      let reader = null;
+      let writer = null;
+
+      function logSentMessage(message) {
+        sentLogDiv.innerHTML += message + "<br>";
+        sentLogDiv.scrollTop = sentLogDiv.scrollHeight;
+      }
+
+      function logReceivedMessage(message) {
+        receivedLogDiv.innerHTML += message;
+        receivedLogDiv.scrollTop = receivedLogDiv.scrollHeight;
+      }
+
+      connectButton.addEventListener("click", async () => {
+        // (接続処理は以前と同様)
+        try {
+          if (!navigator.serial) {
+            logReceivedMessage("Web Serial APIはサポートされていません。");
+            return;
+          }
+
+          port = await navigator.serial.requestPort();
+
+          if (port) {
+            await port.open({ baudRate: 115200 });
+
+            reader = port.readable.getReader();
+            writer = port.writable.getWriter();
+
+            connectButton.disabled = true;
+            disconnectButton.disabled = false;
+            sendCommandButton.disabled = false;
+            logReceivedMessage("シリアルポートに接続しました。\n");
+
+            startReadLoop();
+          } else {
+            logReceivedMessage("ポートの選択がキャンセルされました。");
+          }
+        } catch (error) {
+          logReceivedMessage("シリアルポートへの接続に失敗しました: " + error);
+        }
+      });
+
+      disconnectButton.addEventListener("click", async () => {
+        // (切断処理は以前と同様)
+        if (reader) {
+          await reader.cancel();
+          await reader.releaseLock();
+          reader = null;
+        }
+        if (writer) {
+          await writer.close();
+          await writer.releaseLock();
+          writer = null;
+        }
+        if (port && port.readable) {
+          await port.readable.cancel();
+        }
+        if (port) {
+          await port.close();
+          port = null;
+        }
+
+        connectButton.disabled = false;
+        disconnectButton.disabled = true;
+        sendCommandButton.disabled = true;
+        logReceivedMessage("シリアルポートから切断しました。");
+      });
+
+      async function writeSerial(data) {
+        if (writer) {
+          const dataArray = new TextEncoder().encode(data);
+          await writer.write(dataArray);
+          logSentMessage(data); // 送信履歴に記録
+        }
+      }
+
+      async function readSerial() {
+        try {
+          while (port && port.readable) {
+            const { value, done } = await reader.read();
+            if (done) {
+              logReceivedMessage("リーダーが閉じられました。");
+              break;
+            }
+            if (value) {
+              const textDecoder = new TextDecoder();
+              const receivedText = textDecoder.decode(value);
+              logReceivedMessage(receivedText); // 受信結果に記録
+            }
+          }
+        } catch (error) {
+          if (port && port.readable) {
+            logReceivedMessage("読み取り中にエラーが発生しました: " + error);
+          }
+        } finally {
+          if (reader) {
+            reader.releaseLock();
+          }
+        }
+      }
+
+      async function startReadLoop() {
+        readSerial();
+      }
+
+      async function waitForPrompt() {
+        return new Promise((resolve) => {
+          const checkPrompt = () => {
+            if (
+              receivedLogDiv.textContent.endsWith(">>> \n") ||
+              receivedLogDiv.textContent.endsWith(">>> ")
+            ) {
+              resolve();
+            } else {
+              setTimeout(checkPrompt, 50); // 50ms ごとにプロンプトをチェック
+            }
+          };
+          checkPrompt();
+        });
+      }
+
+      sendCommandButton.addEventListener("click", async () => {
+        if (!writer) {
+          logReceivedMessage("シリアルポートが接続されていません。");
+          return;
+        }
+
+        await writeSerial("\r\n");
+        await waitForPrompt();
+
+        await writeSerial("import sys\r\n");
+        await waitForPrompt();
+
+        await writeSerial("print(sys.version)\r\n");
+      });
+
+      if (!navigator.serial) {
+        logReceivedMessage("Web Serial APIはサポートされていません。");
+      }
+    </script>
+  </body>
+</html>
