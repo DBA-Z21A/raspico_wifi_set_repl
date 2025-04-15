@@ -5,14 +5,15 @@ class WebSerial {
   prompt = ">>> ";
   wasReceivedPrompt = true;
   promptWaitTime = 50;
+  promptTimeout = 5000; // プロンプト待機のタイムアウト (ms)
 
   //このクラス自体からのメッセージ
   log_console = [];
   setLogConsoleCallback = null;
   addConsoleLog(message) {
     this.log_console.push(message);
-    if (setLogConsoleCallback) {
-      setLogConsoleCallback();
+    if (this.setLogConsoleCallback) {
+      this.setLogConsoleCallback();
     }
   }
 
@@ -21,8 +22,8 @@ class WebSerial {
   setLogSendCallBack = null;
   addSendLog(message) {
     this.log_send.push(message);
-    if (setLogSendCallBack) {
-      setLogSendCallBack();
+    if (this.setLogSendCallBack) {
+      this.setLogSendCallBack();
     }
   }
 
@@ -31,8 +32,8 @@ class WebSerial {
   setLogReceivedCallBack = null;
   addReceivedLog(message) {
     this.log_received.push(message);
-    if (setLogReceivedCallBack) {
-      setLogReceivedCallBack();
+    if (this.setLogReceivedCallBack) {
+      this.setLogReceivedCallBack();
     }
   }
 
@@ -42,7 +43,7 @@ class WebSerial {
   }
 
   //処理開始
-  async start(navigator, portrate = 115200) {
+  async start(portrate = 115200) {
     try {
       //APIが存在する事を確認
       if (!this.canUseWebSerialAPI()) {
@@ -54,8 +55,8 @@ class WebSerial {
       this.port = await navigator.serial.requestPort();
       if (this.port) {
         await this.port.open({ baudRate: portrate });
-        this.reader = port.readable.getReader();
-        this.writer = port.writable.getWriter();
+        this.reader = this.port.readable.getReader();
+        this.writer = this.port.writable.getWriter();
         this.addConsoleLog("シリアルポートに接続しました。\n");
         this.startReadLoop();
       }
@@ -99,8 +100,8 @@ class WebSerial {
   //シリアルポートからの受信処理
   async startReadLoop() {
     try {
-      while (port && port.readable) {
-        const { value, done } = await reader.read();
+      while (this.port && this.port.readable && this.reader) {
+        const { value, done } = await this.reader.read();
         if (done) {
           this.addConsoleLog("リーダーが閉じられました。");
           break;
@@ -121,20 +122,23 @@ class WebSerial {
         this.addConsoleLog("読み取り中にエラーが発生しました: " + error);
       }
     } finally {
-      if (reader) {
+      if (this.reader) {
         this.reader.releaseLock();
       }
     }
   }
 
   //送信後にこのメソッドをawaitする事により、指定されたプロンプトを受信するまで待機する
-  waitForPrompt() {
-    return new Promise((resolve) => {
+  async waitForPrompt() {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
       const checkPrompt = () => {
         if (this.wasReceivedPrompt) {
           resolve();
+        } else if (Date.now() - startTime > this.promptTimeout) {
+          reject(new Error("プロンプト受信タイムアウト"));
         } else {
-          setTimeout(checkPrompt, promptWaitTime);
+          setTimeout(checkPrompt, this.promptWaitTime);
         }
       };
       checkPrompt();
