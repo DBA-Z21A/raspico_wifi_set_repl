@@ -2,18 +2,19 @@ class WebSerial {
   port = null;
   reader = null;
   writer = null;
-  prompt = ">>> ";
+  prompt = ">>>";
   wasReceivedPrompt = true;
   promptWaitTime = 50;
-  promptTimeout = 5000; // プロンプト待機のタイムアウト (ms)
+  promptTimeout = 5000;
 
   //このクラス自体からのメッセージ
   log_console = [];
   setLogConsoleCallback = null;
   addConsoleLog(message) {
     this.log_console.push(message);
+    console.log("log_console:" + message);
     if (this.setLogConsoleCallback) {
-      this.setLogConsoleCallback();
+      this.setLogConsoleCallback(this.log_console);
     }
   }
 
@@ -22,8 +23,9 @@ class WebSerial {
   setLogSendCallBack = null;
   addSendLog(message) {
     this.log_send.push(message);
+    console.log("log_send:" + message);
     if (this.setLogSendCallBack) {
-      this.setLogSendCallBack();
+      this.setLogSendCallBack(this.log_send);
     }
   }
 
@@ -32,8 +34,9 @@ class WebSerial {
   setLogReceivedCallBack = null;
   addReceivedLog(message) {
     this.log_received.push(message);
+    console.log("log_received:" + message);
     if (this.setLogReceivedCallBack) {
-      this.setLogReceivedCallBack();
+      this.setLogReceivedCallBack(this.log_received);
     }
   }
 
@@ -47,8 +50,8 @@ class WebSerial {
     try {
       //APIが存在する事を確認
       if (!this.canUseWebSerialAPI()) {
-        this.addConsoleLog("シリアルポートは使用できません");
-        return;
+        this.addConsoleLog("シリアルポートは使用できません。");
+        return false;
       }
 
       //接続実行
@@ -57,12 +60,14 @@ class WebSerial {
         await this.port.open({ baudRate: portrate });
         this.reader = this.port.readable.getReader();
         this.writer = this.port.writable.getWriter();
-        this.addConsoleLog("シリアルポートに接続しました。\n");
+        this.addConsoleLog("シリアルポートに接続しました。");
         this.startReadLoop();
+        return true;
       }
     } catch (error) {
       this.addConsoleLog("シリアルポートへの接続に失敗しました: " + error);
     }
+    return false;
   }
 
   //処理終了
@@ -85,6 +90,7 @@ class WebSerial {
       this.port = null;
     }
     this.addConsoleLog("シリアルポートから切断しました。");
+    return true;
   }
 
   //シリアルポートに対しての送信処理

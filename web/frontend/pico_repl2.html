@@ -1,193 +1,116 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+      crossorigin="anonymous"
+    />
     <title>Raspberry Pi Pico W REPL</title>
-    <style>
-      #sentLog {
-        border: 1px solid green;
-        height: 100px;
-        overflow-y: scroll;
-        padding: 5px;
-        margin-bottom: 10px;
-      }
-      #receivedLog {
-        background-color: black;
-        color: white;
-        height: 150px;
-        overflow-y: scroll;
-        padding: 5px;
-        margin-bottom: 10px;
-      }
-    </style>
+    <link rel="stylesheet" href="css/WebSerial.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/mitt/dist/mitt.umd.js"></script>
+    <script src="js/WebSerial.js"></script>
   </head>
+
   <body>
     <h1>Raspberry Pi Pico W REPL</h1>
-
-    <div>
-      <button id="connectButton">接続</button>
-      <button id="disconnectButton" disabled>切断</button>
+    <div class="container-fluid">
+      <form id="foemWebSerial">
+        <div class="row">
+          <div class="col-6">
+            <button type="button" class="w-100" v-bind:disabled="wasConnected" v-on:click="clickStart">接続</button>
+          </div>
+          <div class="col-6">
+            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickClose">切断</button>
+          </div>
+        </div>
+        <hr />
+        <div class="row">
+          <div class="col-6">
+            <h2>メッセージ</h2>
+            <div id="consoleLog" class="divLogDisplay"><pre>{{ConsoleLog}}</pre></div>
+          </div>
+          <div class="col-6">
+            <h2>送信履歴</h2>
+            <div id="sentLog" class="divLogDisplay"><pre>{{SentLog}}</pre></div>
+          </div>
+          <div class="col-6">
+            <h2>受信結果</h2>
+            <div id="receivedLog" class="divLogDisplay"><pre>{{ReceivedLog}}</pre></div>
+          </div>
+        </div>
+        <hr />
+        <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickTest">
+          バージョン確認（接続テスト）
+        </button>
+      </form>
     </div>
-
-    <div>
-      <h2>送信履歴</h2>
-      <div id="sentLog"></div>
-    </div>
-
-    <div>
-      <h2>受信結果</h2>
-      <pre id="receivedLog"></pre>
-    </div>
-
-    <button id="sendCommandButton" disabled>バージョン確認</button>
-
     <script>
-      const sentLogDiv = document.getElementById("sentLog");
-      const receivedLogDiv = document.getElementById("receivedLog");
-      const connectButton = document.getElementById("connectButton");
-      const disconnectButton = document.getElementById("disconnectButton");
-      const sendCommandButton = document.getElementById("sendCommandButton");
-
-      let port = null;
-      let reader = null;
-      let writer = null;
-
-      function logSentMessage(message) {
-        sentLogDiv.innerHTML += message + "<br>";
-        sentLogDiv.scrollTop = sentLogDiv.scrollHeight;
-      }
-
-      function logReceivedMessage(message) {
-        receivedLogDiv.innerHTML += message;
-        receivedLogDiv.scrollTop = receivedLogDiv.scrollHeight;
-      }
-
-      connectButton.addEventListener("click", async () => {
-        // (接続処理は以前と同様)
-        try {
-          if (!navigator.serial) {
-            logReceivedMessage("Web Serial APIはサポートされていません。");
-            return;
-          }
-
-          port = await navigator.serial.requestPort();
-
-          if (port) {
-            await port.open({ baudRate: 115200 });
-
-            reader = port.readable.getReader();
-            writer = port.writable.getWriter();
-
-            connectButton.disabled = true;
-            disconnectButton.disabled = false;
-            sendCommandButton.disabled = false;
-            logReceivedMessage("シリアルポートに接続しました。\n");
-
-            startReadLoop();
-          } else {
-            logReceivedMessage("ポートの選択がキャンセルされました。");
-          }
-        } catch (error) {
-          logReceivedMessage("シリアルポートへの接続に失敗しました: " + error);
-        }
-      });
-
-      disconnectButton.addEventListener("click", async () => {
-        // (切断処理は以前と同様)
-        if (reader) {
-          await reader.cancel();
-          await reader.releaseLock();
-          reader = null;
-        }
-        if (writer) {
-          await writer.close();
-          await writer.releaseLock();
-          writer = null;
-        }
-        if (port && port.readable) {
-          await port.readable.cancel();
-        }
-        if (port) {
-          await port.close();
-          port = null;
-        }
-
-        connectButton.disabled = false;
-        disconnectButton.disabled = true;
-        sendCommandButton.disabled = true;
-        logReceivedMessage("シリアルポートから切断しました。");
-      });
-
-      async function writeSerial(data) {
-        if (writer) {
-          const dataArray = new TextEncoder().encode(data);
-          await writer.write(dataArray);
-          logSentMessage(data); // 送信履歴に記録
-        }
-      }
-
-      async function readSerial() {
-        try {
-          while (port && port.readable) {
-            const { value, done } = await reader.read();
-            if (done) {
-              logReceivedMessage("リーダーが閉じられました。");
-              break;
-            }
-            if (value) {
-              const textDecoder = new TextDecoder();
-              const receivedText = textDecoder.decode(value);
-              logReceivedMessage(receivedText); // 受信結果に記録
-            }
-          }
-        } catch (error) {
-          if (port && port.readable) {
-            logReceivedMessage("読み取り中にエラーが発生しました: " + error);
-          }
-        } finally {
-          if (reader) {
-            reader.releaseLock();
-          }
-        }
-      }
-
-      async function startReadLoop() {
-        readSerial();
-      }
-
-      async function waitForPrompt() {
-        return new Promise((resolve) => {
-          const checkPrompt = () => {
-            if (
-              receivedLogDiv.textContent.endsWith(">>> \n") ||
-              receivedLogDiv.textContent.endsWith(">>> ")
-            ) {
-              resolve();
-            } else {
-              setTimeout(checkPrompt, 50); // 50ms ごとにプロンプトをチェック
-            }
+      globalThis.webSerialManager = new WebSerial();
+      globalThis.emitter = mitt();
+      const { createApp, ref } = Vue;
+      createApp({
+        setup: function () {
+          const ConsoleLog = ref("");
+          const SentLog = ref("");
+          const ReceivedLog = ref("");
+          const wasConnected = ref(false);
+          const clickStart = async function () {
+            wasConnected.value = await globalThis.webSerialManager.start();
           };
-          checkPrompt();
-        });
-      }
+          const clickClose = async function () {
+            wasConnected.value = await !globalThis.webSerialManager.close();
+          };
+          const clickTest = async function () {
+            await globalThis.webSerialManager.writeSerial("\r\n");
+            await globalThis.webSerialManager.waitForPrompt();
 
-      sendCommandButton.addEventListener("click", async () => {
-        if (!writer) {
-          logReceivedMessage("シリアルポートが接続されていません。");
-          return;
-        }
+            await globalThis.webSerialManager.writeSerial("import sys\r\n");
+            await globalThis.webSerialManager.waitForPrompt();
 
-        await writeSerial("\r\n");
-        await waitForPrompt();
+            await globalThis.webSerialManager.writeSerial("print(sys.version)\r\n");
+          };
+          return {
+            ConsoleLog,
+            SentLog,
+            ReceivedLog,
+            wasConnected,
+            clickStart,
+            clickClose,
+            clickTest,
+          };
+        },
+        mounted: function () {
+          globalThis.emitter.on("web_serial_console", (logs) => {
+            this.ConsoleLog = logs.join("\n");
+          });
+          globalThis.emitter.on("web_serial_sent", (logs) => {
+            this.SentLog = logs.join("");
+          });
+          globalThis.emitter.on("web_serial_received", (logs) => {
+            this.ReceivedLog = logs.join("");
+          });
 
-        await writeSerial("import sys\r\n");
-        await waitForPrompt();
-
-        await writeSerial("print(sys.version)\r\n");
-      });
-
-      if (!navigator.serial) {
-        logReceivedMessage("Web Serial APIはサポートされていません。");
-      }
+          globalThis.webSerialManager.setLogConsoleCallback = function (logs) {
+            globalThis.emitter.emit("web_serial_console", logs);
+          };
+          globalThis.webSerialManager.setLogSendCallBack = function (logs) {
+            globalThis.emitter.emit("web_serial_sent", logs);
+          };
+          globalThis.webSerialManager.setLogReceivedCallBack = function (logs) {
+            globalThis.emitter.emit("web_serial_received", logs);
+          };
+        },
+      }).mount("#foemWebSerial");
     </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>
