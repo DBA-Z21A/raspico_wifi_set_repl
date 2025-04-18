@@ -11,86 +11,117 @@
     />
     <title>Raspberry Pi Pico W REPL</title>
     <link rel="stylesheet" href="css/WebSerial.css" />
-    <style>
-      #sentLog {
-        background-color: greenyellow;
-        color: black;
+    <link rel="stylesheet" href="css/WiFiSetting.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
+          "mitt": "https://cdn.jsdelivr.net/npm/mitt@3.0.1/+esm",
+          "WebSerial": "./js/WebSerial.js"
+        }
       }
-
-      #receivedLog {
-        background-color: black;
-        color: white;
-      }
-
-      #consoleLog {
-        background-color: white;
-        color: black;
-      }
-    </style>
+    </script>
   </head>
 
   <body>
     <h1>Raspberry Pi Pico W REPL</h1>
-
-    <div>
-      <button type="button">接続</button>
-      <button type="button" disabled>切断</button>
+    <div class="container-fluid">
+      <form id="formWebSerial">
+        <div class="row">
+          <div class="col-6">
+            <button type="button" class="w-100" v-bind:disabled="wasConnected" v-on:click="clickStart">接続</button>
+          </div>
+          <div class="col-6">
+            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickClose">切断</button>
+          </div>
+        </div>
+        <hr />
+        <div class="row">
+          <div class="col-12 col-lg-6">
+            <h2>メッセージ</h2>
+            <div id="consoleLog" class="divLogDisplay"><pre>{{ConsoleLog}}</pre></div>
+            <hr />
+            <h2>送信履歴</h2>
+            <div id="sentLog" class="divLogDisplay"><pre>{{SentLog}}</pre></div>
+            <hr />
+            <h2>受信結果</h2>
+            <div id="receivedLog" class="divLogDisplay"><pre>{{ReceivedLog}}</pre></div>
+            <hr />
+            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickTest">
+              バージョン確認（接続テスト）
+            </button>
+          </div>
+          <div class="col-12 col-lg-6 mt-4 mt-lg-0">
+            <h2>WiFi設定</h2>
+            <div>
+              <label class="form-label" for="formInputTextSSID">SSID:</label>
+              <input class="form-control" id="formInputTextSSID" type="text" />
+            </div>
+            <div>
+              <label class="form-label" for="formInputTextPassword">パスワード:</label>
+              <input class="form-control" type="text" id="formInputTextPassword" />
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="formSwitchStaticIpAddress" checked />
+              <label class="form-check-label" for="formSwitchStaticIpAddress">固定IPアドレスの使用</label>
+            </div>
+            <fieldset style="margin: 0.5rem; padding: 0.5rem; border: solid 2px black; border-radius: 0.5rem">
+              <legend>固定IPアドレスに必要な設定</legend>
+              <div>
+                <label class="form-label" for="formInputTextIpAddress">固定IPアドレス:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextIpAddress">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress4" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label" for="formInputTextSubnetMask">ネットマスク:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextSubnetMask">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask4" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label" for="formInputTextGateway">ゲートウェイ:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextGateway">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway4" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label" for="formInputTextDNS1">DNS（プライマリ）:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextDNS1">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-4" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label" for="formInputTextDNS2">DNS（セカンダリ）:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextDNS2">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-4" />
+                </div>
+              </div>
+            </fieldset>
+            <button type="button" class="w-100" v-bind:disabled="!wasConnected">WiFi接続情報を設定</button>
+          </div>
+        </div>
+      </form>
     </div>
-
-    <div>
-      <h2>送信履歴</h2>
-      <div id="sentLog" class="divLogDisplay"></div>
-    </div>
-
-    <div>
-      <h2>受信結果</h2>
-      <pre id="receivedLog" class="divLogDisplay"></pre>
-    </div>
-
-    <div>
-      <h2>メッセージ</h2>
-      <div id="consoleLog" class="divLogDisplay"></div>
-    </div>
-
-    <button type="button" disabled>バージョン確認（テスト）</button>
-    <form>
-      <div>
-        <label class="form-label" for="formInputTextSSID">SSID:</label>
-        <input class="form-control" id="formInputTextSSID" type="text" />
-      </div>
-      <div>
-        <label class="form-label" for="formInputTextPassword">パスワード:</label>
-        <input class="form-control" type="text" id="formInputTextPassword" />
-      </div>
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="formSwitchStaticIpAddress" checked />
-        <label class="form-check-label" for="formSwitchStaticIpAddress">固定IPアドレスの使用</label>
-      </div>
-      <fieldset style="margin: 0.5rem; padding: 0.5rem; border: solid 2px black; border-radius: 0.5rem">
-        <legend>固定IPアドレスに必要な設定</legend>
-        <div>
-          <label class="form-label" for="formInputTextIpAddress">固定IPアドレス:</label>
-          <input class="form-control" type="text" id="formInputTextIpAddress" />
-        </div>
-        <div>
-          <label class="form-label" for="formInputTextSubnetMask">ネットマスク:</label>
-          <input class="form-control" type="text" id="formInputTextSubnetMask" />
-        </div>
-        <div>
-          <label class="form-label" for="formInputTextGateway">ゲートウェイ:</label>
-          <input class="form-control" type="text" id="formInputTextGateway" />
-        </div>
-        <div>
-          <label class="form-label" for="formInputTextDNS1">DNS（プライマリ）:</label>
-          <input class="form-control" type="text" id="formInputTextDNS1" />
-        </div>
-        <div>
-          <label class="form-label" for="formInputTextDNS2">DNS（セカンダリ）:</label>
-          <input class="form-control" type="text" id="formInputTextDNS2" />
-        </div>
-      </fieldset>
-      <button type="button" class="w-100">WiFi接続情報を設定</button>
-    </form>
+    <script type="module">
+      import app from "./js/pico_repl2.js";
+      app.mount("#formWebSerial");
+    </script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"

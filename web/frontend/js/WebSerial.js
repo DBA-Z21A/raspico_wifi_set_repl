@@ -11,6 +11,7 @@ class WebSerial {
   log_console = [];
   setLogConsoleCallback = null;
   addConsoleLog(message) {
+    message = message + "\n";
     this.log_console.push(message);
     console.log("log_console:" + message);
     if (this.setLogConsoleCallback) {
@@ -151,3 +152,4 @@ class WebSerial {
     });
   }
 }
+export default WebSerial;

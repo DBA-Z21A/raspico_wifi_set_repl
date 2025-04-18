@@ -1,0 +1,10 @@
+.inputTextIPAddressInline {
+  display: flex;
+  gap: 1%;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inputTextIPAddressInline input {
+  width: 20%;
+}
