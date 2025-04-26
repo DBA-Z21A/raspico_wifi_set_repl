@@ -151,5 +151,19 @@ class WebSerial {
       checkPrompt();
     });
   }
+
+  //複数コマンドを一括して送信
+  async sendCommands(lines) {
+    for (const line of lines) {
+      await this.writeSerial(line + "\r");
+      await this.waitForPrompt();
+    }
+  }
+
+  //REPLをソフトリブート
+  async REPLReset() {
+    await this.writeSerial("\x03"); // Ctrl+C
+    await this.writeSerial("\x04"); // Ctrl+D（ソフトリブート）
+  }
 }
 export default WebSerial;

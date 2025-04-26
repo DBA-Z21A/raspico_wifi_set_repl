@@ -17,10 +17,29 @@
         "imports": {
           "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
           "mitt": "https://cdn.jsdelivr.net/npm/mitt@3.0.1/+esm",
-          "WebSerial": "./js/WebSerial.js"
+          "WebSerial": "./js/WebSerial.js",
+          "VueWebSerial": "./js/VueWebSerial.js"
         }
       }
     </script>
+    <style>
+      .logHeader {
+        cursor: pointer;
+      }
+
+      .slide-enter-active,
+      .slide-leave-active {
+        transition: height 0.5s ease;
+      }
+      .slide-enter-from,
+      .slide-leave-to {
+        height: 0;
+      }
+      .slide-enter-to,
+      .slide-leave-from {
+        height: auto;
+      }
+    </style>
   </head>
 
   <body>
@@ -38,78 +57,73 @@
         <hr />
         <div class="row">
           <div class="col-12 col-lg-6">
-            <h2>メッセージ</h2>
-            <div id="consoleLog" class="divLogDisplay"><pre>{{ConsoleLog}}</pre></div>
+            <h2 class="logHeader" v-on:click="showConsoleLog = !showConsoleLog">状態</h2>
+            <transition name="slide">
+              <div v-show="showConsoleLog" id="consoleLog" class="divLogDisplay"><pre>{{ConsoleLog}}</pre></div>
+            </transition>
             <hr />
-            <h2>送信履歴</h2>
-            <div id="sentLog" class="divLogDisplay"><pre>{{SentLog}}</pre></div>
+            <h2 class="logHeader" v-on:click="showSentLog = !showSentLog">送信履歴</h2>
+            <transition name="slide">
+              <div v-show="showSentLog" id="sentLog" class="divLogDisplay"><pre>{{SentLog}}</pre></div>
+            </transition>
             <hr />
-            <h2>受信結果</h2>
-            <div id="receivedLog" class="divLogDisplay"><pre>{{ReceivedLog}}</pre></div>
+            <h2 class="logHeader" v-on:click="showReceivedLog = !showReceivedLog">受信結果</h2>
+            <transition name="slide">
+              <div v-show="showReceivedLog" id="receivedLog" class="divLogDisplay"><pre>{{ReceivedLog}}</pre></div>
+            </transition>
             <hr />
-            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickTest">
-              バージョン確認（接続テスト）
-            </button>
+            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickTest">バージョン確認（接続テスト）</button>
           </div>
           <div class="col-12 col-lg-6 mt-4 mt-lg-0">
             <h2>WiFi設定</h2>
             <div>
               <label class="form-label" for="formInputTextSSID">SSID:</label>
-              <input class="form-control" id="formInputTextSSID" type="text" />
+              <input class="form-control" id="formInputTextSSID" type="text" v-model="wifi.SSID" />
             </div>
             <div>
               <label class="form-label" for="formInputTextPassword">パスワード:</label>
-              <input class="form-control" type="text" id="formInputTextPassword" />
+              <input class="form-control" type="text" id="formInputTextPassword" v-model="wifi.password" />
             </div>
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="formSwitchStaticIpAddress" checked />
+              <input class="form-check-input" type="checkbox" id="formSwitchStaticIpAddress" v-model="wifi.useStaticIP" />
               <label class="form-check-label" for="formSwitchStaticIpAddress">固定IPアドレスの使用</label>
             </div>
-            <fieldset style="margin: 0.5rem; padding: 0.5rem; border: solid 2px black; border-radius: 0.5rem">
+            <fieldset style="margin: 0.5rem; padding: 0.5rem; border: solid 2px black; border-radius: 0.5rem" v-show="wifi.useStaticIP">
               <legend>固定IPアドレスに必要な設定</legend>
               <div>
                 <label class="form-label" for="formInputTextIpAddress">固定IPアドレス:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextIpAddress">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress1" v-model="wifi.staticIP1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress2" v-model="wifi.staticIP2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress3" v-model="wifi.staticIP3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress4" v-model="wifi.staticIP4" />
                 </div>
               </div>
               <div>
                 <label class="form-label" for="formInputTextSubnetMask">ネットマスク:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextSubnetMask">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask1" v-model="wifi.subnetMask1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask2" v-model="wifi.subnetMask2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask3" v-model="wifi.subnetMask3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask4" v-model="wifi.subnetMask4" />
                 </div>
               </div>
               <div>
                 <label class="form-label" for="formInputTextGateway">ゲートウェイ:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextGateway">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway1" v-model="wifi.gateway1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway2" v-model="wifi.gateway2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway3" v-model="wifi.gateway3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway4" v-model="wifi.gateway4" />
                 </div>
               </div>
               <div>
-                <label class="form-label" for="formInputTextDNS1">DNS（プライマリ）:</label>
-                <div class="inputTextIPAddressInline" id="formInputTextDNS1">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1-4" />
-                </div>
-              </div>
-              <div>
-                <label class="form-label" for="formInputTextDNS2">DNS（セカンダリ）:</label>
-                <div class="inputTextIPAddressInline" id="formInputTextDNS2">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2-4" />
+                <label class="form-label" for="formInputTextDNS">DNS:</label>
+                <div class="inputTextIPAddressInline" id="formInputTextDNS">
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1" v-model="wifi.DNS1" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2" v-model="wifi.DNS2" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS3" v-model="wifi.DNS3" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS4" v-model="wifi.DNS4" />
                 </div>
               </div>
             </fieldset>
@@ -119,7 +133,51 @@
       </form>
     </div>
     <script type="module">
-      import app from "./js/pico_repl2.js";
+      import { createApp, ref } from "vue";
+      import { vueWebSerial } from "./js/VueWebSerial.js";
+      const app = createApp({
+        setup() {
+          const { ConsoleLog, SentLog, ReceivedLog, wasConnected, clickStart, clickClose, clickTest } = vueWebSerial();
+          const wifiInfo = {
+            SSID: "",
+            password: "",
+            useStaticIP: false,
+            staticIP1: 0,
+            staticIP2: 0,
+            staticIP3: 0,
+            staticIP4: 0,
+            subnetMask1: 255,
+            subnetMask2: 255,
+            subnetMask3: 255,
+            subnetMask4: 0,
+            gateway1: 0,
+            gateway2: 0,
+            gateway3: 0,
+            gateway4: 0,
+            DNS1: 8,
+            DNS2: 8,
+            DNS3: 8,
+            DNS4: 8,
+          };
+          const wifi = ref(wifiInfo);
+          const showConsoleLog = ref(false);
+          const showSentLog = ref(false);
+          const showReceivedLog = ref(true);
+          return {
+            showConsoleLog,
+            ConsoleLog,
+            showSentLog,
+            SentLog,
+            showReceivedLog,
+            ReceivedLog,
+            wasConnected,
+            clickStart,
+            clickClose,
+            clickTest,
+            wifi,
+          };
+        },
+      });
       app.mount("#formWebSerial");
     </script>
     <script
