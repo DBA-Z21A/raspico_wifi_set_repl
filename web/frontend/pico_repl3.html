@@ -72,13 +72,18 @@
               <div v-show="showReceivedLog" id="receivedLog" class="divLogDisplay"><pre>{{ReceivedLog}}</pre></div>
             </transition>
             <hr />
-            <button type="button" class="w-100" v-bind:disabled="!wasConnected" v-on:click="clickTest">バージョン確認（接続テスト）</button>
+            <button type="button" class="w-100" v-bind:disabled="(!wasConnected||nowSendingToSerial)" v-on:click="clickTest">
+              バージョン確認（接続テスト）
+            </button>
           </div>
           <div class="col-12 col-lg-6 mt-4 mt-lg-0">
             <h2>WiFi設定</h2>
             <div>
               <label class="form-label" for="formInputTextSSID">SSID:</label>
               <input class="form-control" id="formInputTextSSID" type="text" v-model="wifi.SSID" />
+              <button type="button" class="w-100" v-on:click="doScanSSID" v-bind:disabled="(!wasConnected||nowSendingToSerial)">
+                受信可能なSSIDを検索
+              </button>
             </div>
             <div>
               <label class="form-label" for="formInputTextPassword">パスワード:</label>
@@ -93,41 +98,44 @@
               <div>
                 <label class="form-label" for="formInputTextIpAddress">固定IPアドレス:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextIpAddress">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress1" v-model="wifi.staticIP1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress2" v-model="wifi.staticIP2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress3" v-model="wifi.staticIP3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress4" v-model="wifi.staticIP4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress1" v-model="wifi.staticIP[0]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress2" v-model="wifi.staticIP[1]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress3" v-model="wifi.staticIP[2]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextIpAddress4" v-model="wifi.staticIP[3]" />
                 </div>
               </div>
               <div>
                 <label class="form-label" for="formInputTextSubnetMask">ネットマスク:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextSubnetMask">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask1" v-model="wifi.subnetMask1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask2" v-model="wifi.subnetMask2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask3" v-model="wifi.subnetMask3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask4" v-model="wifi.subnetMask4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask1" v-model="wifi.subnetMask[0]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask2" v-model="wifi.subnetMask[1]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask3" v-model="wifi.subnetMask[2]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextSubnetMask4" v-model="wifi.subnetMask[3]" />
                 </div>
               </div>
               <div>
                 <label class="form-label" for="formInputTextGateway">ゲートウェイ:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextGateway">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway1" v-model="wifi.gateway1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway2" v-model="wifi.gateway2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway3" v-model="wifi.gateway3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway4" v-model="wifi.gateway4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway1" v-model="wifi.gateway[0]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway2" v-model="wifi.gateway[1]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway3" v-model="wifi.gateway[2]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextGateway4" v-model="wifi.gateway[3]" />
                 </div>
               </div>
               <div>
                 <label class="form-label" for="formInputTextDNS">DNS:</label>
                 <div class="inputTextIPAddressInline" id="formInputTextDNS">
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1" v-model="wifi.DNS1" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2" v-model="wifi.DNS2" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS3" v-model="wifi.DNS3" />.
-                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS4" v-model="wifi.DNS4" />
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS1" v-model="wifi.DNS[0]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS2" v-model="wifi.DNS[1]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS3" v-model="wifi.DNS[2]" />.
+                  <input class="form-control" type="number" min="0" max="255" id="formInputTextDNS4" v-model="wifi.DNS[3]" />
                 </div>
               </div>
             </fieldset>
-            <button type="button" class="w-100" v-bind:disabled="!wasConnected">WiFi接続情報を設定</button>
+            <div id="divWiFiInfoError" style="color: red"></div>
+            <button type="button" class="w-100" v-bind:disabled="(!wasConnected||nowSendingToSerial)" v-on:click="sendWiFiSetting">
+              WiFi接続情報を設定
+            </button>
           </div>
         </div>
       </form>
@@ -142,27 +150,52 @@
             SSID: "",
             password: "",
             useStaticIP: false,
-            staticIP1: 0,
-            staticIP2: 0,
-            staticIP3: 0,
-            staticIP4: 0,
-            subnetMask1: 255,
-            subnetMask2: 255,
-            subnetMask3: 255,
-            subnetMask4: 0,
-            gateway1: 0,
-            gateway2: 0,
-            gateway3: 0,
-            gateway4: 0,
-            DNS1: 8,
-            DNS2: 8,
-            DNS3: 8,
-            DNS4: 8,
+            staticIP: [0, 0, 0, 0],
+            subnetMask: [255, 255, 255, 0],
+            gateway: [0, 0, 0, 0],
+            DNS: [8, 8, 8, 8],
           };
           const wifi = ref(wifiInfo);
           const showConsoleLog = ref(false);
           const showSentLog = ref(false);
           const showReceivedLog = ref(true);
+          const sendWiFiSetting = async function () {
+            var divError = document.getElementById("divWiFiInfoError");
+            divError.textContent = "";
+            if (!wifiInfoValidation()) {
+              divError.textContent = "invalid input...";
+              return;
+            }
+            const formatedWifiData = {
+              wifi_ssid: wifi.value.SSID,
+              wifi_password: wifi.value.password,
+              use_static_ip: wifi.value.useStaticIP,
+              static_ip: wifi.value.staticIP.join("."),
+              subnet_mask: wifi.value.subnetMask.join("."),
+              gateway: wifi.value.gateway.join("."),
+              dns_server: wifi.value.DNS.join("."),
+            };
+            console.log(JSON.stringify(formatedWifiData));
+            nowSendingToSerial.value = true;
+            await globalThis.webSerialManager.sendCommands([
+              "import wifisetting",
+              "wifisetting.save_wifi_config('" + JSON.stringify(formatedWifiData) + "')",
+              "wifisetting.apply_wifi_config()",
+            ]);
+            nowSendingToSerial.value = false;
+          };
+          const wifiInfoValidation = function () {
+            var result = true;
+            result = result && wifi.value.SSID;
+            result = result && wifi.value.password;
+            return result;
+          };
+          const doScanSSID = async function () {
+            nowSendingToSerial.value = true;
+            await globalThis.webSerialManager.sendCommands(["import wifisetting", "wifisetting.scanSSID()"]);
+            nowSendingToSerial.value = false;
+          };
+          const nowSendingToSerial = ref(false);
           return {
             showConsoleLog,
             ConsoleLog,
@@ -175,6 +208,10 @@
             clickClose,
             clickTest,
             wifi,
+            doScanSSID,
+            sendWiFiSetting,
+            wifiInfoValidation,
+            nowSendingToSerial,
           };
         },
       });

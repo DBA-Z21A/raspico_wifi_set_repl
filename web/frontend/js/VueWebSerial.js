@@ -13,19 +13,30 @@ export function vueWebSerial() {
   const wasConnected = ref(false);
 
   const clickStart = async () => {
-    wasConnected.value = await globalThis.webSerialManager.start();
+    try {
+      wasConnected.value = await globalThis.webSerialManager.start();
+    } catch (e) {
+      ConsoleLog.value += `start error: ${e.message}\n`;
+    }
   };
   const clickClose = async () => {
     wasConnected.value = !(await globalThis.webSerialManager.close());
   };
   const clickTest = async () => {
-    await globalThis.webSerialManager.writeSerial("\r\n");
-    await globalThis.webSerialManager.waitForPrompt();
+    try {
+      await globalThis.webSerialManager.REPLReset();
+      await globalThis.webSerialManager.waitForPrompt();
+      await globalThis.webSerialManager.writeSerial("\r\n");
+      await globalThis.webSerialManager.waitForPrompt();
 
-    await globalThis.webSerialManager.writeSerial("import sys\r\n");
-    await globalThis.webSerialManager.waitForPrompt();
+      await globalThis.webSerialManager.writeSerial("import sys\r\n");
+      await globalThis.webSerialManager.waitForPrompt();
 
-    await globalThis.webSerialManager.writeSerial("print(sys.version)\r\n");
+      await globalThis.webSerialManager.writeSerial("print(sys.version)\r\n");
+      await globalThis.webSerialManager.waitForPrompt();
+    } catch (e) {
+      ConsoleLog.value += `start error: ${e.message}\n`;
+    }
   };
 
   onMounted(() => {

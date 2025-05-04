@@ -5,7 +5,7 @@ class WebSerial {
   prompt = ">>>";
   wasReceivedPrompt = true;
   promptWaitTime = 50;
-  promptTimeout = 5000;
+  promptTimeout = 10000;
 
   //このクラス自体からのメッセージ
   log_console = [];
@@ -75,7 +75,7 @@ class WebSerial {
   async close() {
     if (this.reader) {
       await this.reader.cancel();
-      await this.reader.releaseLock();
+      this.reader.releaseLock();
       this.reader = null;
     }
     if (this.writer) {
@@ -83,7 +83,7 @@ class WebSerial {
       await this.writer.releaseLock();
       this.writer = null;
     }
-    if (this.port && this.port.readable) {
+    if (this.port?.readable?.cancel) {
       await this.port.readable.cancel();
     }
     if (this.port) {
@@ -114,7 +114,7 @@ class WebSerial {
           break;
         }
         if (value) {
-          const textDecoder = new TextDecoder();
+          const textDecoder = new TextDecoder("utf-8");
           const receivedText = textDecoder.decode(value);
           this.addReceivedLog(receivedText);
 
@@ -154,6 +154,7 @@ class WebSerial {
 
   //複数コマンドを一括して送信
   async sendCommands(lines) {
+    await this.REPLReset();
     for (const line of lines) {
       await this.writeSerial(line + "\r");
       await this.waitForPrompt();
@@ -162,8 +163,32 @@ class WebSerial {
 
   //REPLをソフトリブート
   async REPLReset() {
-    await this.writeSerial("\x03"); // Ctrl+C
-    await this.writeSerial("\x04"); // Ctrl+D（ソフトリブート）
+    this.addConsoleLog("REPLリセット中...");
+
+    //  中断（Ctrl+C x2）
+    await this.writeSerial("\x03");
+    await this.sleep(100);
+    await this.writeSerial("\x03");
+    await this.sleep(100);
+
+    //  ソフトリブート（Ctrl+D）
+    await this.writeSerial("\x04");
+    await this.sleep(300); // リブート時間確保
+
+    //  通常REPLモード（Ctrl+B）を明示的に送信
+    await this.writeSerial("\x02");
+    await this.sleep(300); // 安定化待ち
+
+    //  プロンプト確認
+    try {
+      await this.waitForPrompt();
+      this.addConsoleLog("REPLリセット完了。");
+    } catch (e) {
+      this.addConsoleLog("REPLリセット失敗: " + e.message);
+    }
+  }
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 export default WebSerial;

@@ -1,0 +1,19 @@
+{
+  "terminal.integrated.fontFamily": "Consolas, 'Courier New', 'MS Gothic'",
+  "terminal.integrated.fontSize": 12,
+
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.host": "localhost",
+
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingModuleSource": "none"
+  },
+  "python.terminal.activateEnvironment": false,
+  "python.analysis.typeshedPaths": ["~/.micropico-stubs/included"],
+  "python.analysis.extraPaths": ["~/.micropico-stubs/included"],
+
+  "micropico.openOnStart": true,
+  "micropico.serial.encoding": "utf-8"
+}
