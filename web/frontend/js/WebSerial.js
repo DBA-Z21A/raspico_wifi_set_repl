@@ -6,6 +6,7 @@ class WebSerial {
   wasReceivedPrompt = true;
   promptWaitTime = 50;
   promptTimeout = 20000;
+  promptBuffer = "";
 
   //このクラス自体からのメッセージ
   log_console = [];
@@ -107,6 +108,7 @@ class WebSerial {
   //シリアルポートからの受信処理
   async startReadLoop() {
     try {
+      const textDecoder = new TextDecoder("utf-8");
       while (this.port && this.port.readable && this.reader) {
         const { value, done } = await this.reader.read();
         if (done) {
@@ -114,13 +116,19 @@ class WebSerial {
           break;
         }
         if (value) {
-          const textDecoder = new TextDecoder("utf-8");
           const receivedText = textDecoder.decode(value);
           this.addReceivedLog(receivedText);
 
-          const trimmedValue = receivedText.trimEnd();
-          if (trimmedValue.endsWith(this.prompt)) {
+          // バッファに追記し、長さが増えすぎないよう末尾だけ保持
+          this.promptBuffer += receivedText;
+          if (this.promptBuffer.length > 100) {
+            this.promptBuffer = this.promptBuffer.slice(-100);
+          }
+
+          // プロンプトが出現したかチェック（行末でなくてもOK）
+          if (this.promptBuffer.includes(this.prompt)) {
             this.wasReceivedPrompt = true;
+            this.promptBuffer = ""; // プロンプト確認済みなのでバッファクリア
           }
         }
       }

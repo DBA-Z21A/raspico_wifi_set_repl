@@ -192,7 +192,7 @@
           };
           const doScanSSID = async function () {
             nowSendingToSerial.value = true;
-            await globalThis.webSerialManager.sendCommands(["import wifisetting", "wifisetting.scanSSID()", "wifisetting.get_time_from_NTP"]);
+            await globalThis.webSerialManager.sendCommands(["import wifisetting", "wifisetting.scanSSID()", "wifisetting.get_time_from_NTP()"]);
             nowSendingToSerial.value = false;
           };
           const nowSendingToSerial = ref(false);

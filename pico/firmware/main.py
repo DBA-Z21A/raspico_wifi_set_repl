@@ -21,6 +21,7 @@ def debounce(delay=0.1):
 beep = machine.Pin(28, machine.Pin.OUT)
 led = machine.Pin("LED", machine.Pin.OUT)
 filename = wifisetting._SETTING_FILE_NAME
+NTP_host_list = ["time.google.com", "ntp.nict.jp", "ntp.nc.u-tokyo.ac.jp"]
 url = "http://example.com"
 
 # WiFi接続設定が存在しない場合は終了
@@ -51,21 +52,26 @@ if wifisetting.apply_wifi_config() == False:
 
 
 # NTPサーバに接続し内部時計を同期。ただしUTCである事に注意
-try:
-    time.sleep(1)
-    ntptime.host = "ntp.nict.jp"
-    ntptime.settime()
-    print("datetime set from NTP")
-except Exception as e:
-    print("Error:", e)
+for NTP_host in NTP_host_list:
+    try:
+        print(f"try access NTP server:{NTP_host}")
+        ntptime.host = NTP_host
+        ntptime.settime()
+        print("datetime set from NTP")
+        break
+    except Exception as e:
+        print("Error:", e)
+        time.sleep(10)
 
 
 led.on()
+led_toggle_time = time.time()
+
 reset_entry_timestamps = []
+reset_confirm_timestamps = []
 now_waiting_reset = False
 waiting_reset_start_time = -1
 last_http_access_time = -1
-reset_confirm_timestamps = []
 
 while True:
 
@@ -74,7 +80,7 @@ while True:
         time.sleep(0.25)
         led.on()
 
-    # ボタンが押されたら現在の時刻を記録（秒単位のUNIX時間）
+    # bootselボタンが押されたら現在の時刻を記録（秒単位のUNIX時間）
     if rp2.bootsel_button() == 1:
         if debounce():
             if now_waiting_reset:
@@ -104,6 +110,7 @@ while True:
         time.sleep(0.25)
         beep.off()
 
+    # ※実運用ではスライドスイッチなどでモードを切り替えるべき
     if now_waiting_reset:
 
         # リセット待機状態で再度三回ボタンが押されたら、設定ファイルを削除して再起動
@@ -143,5 +150,9 @@ while True:
             response.close()
         except Exception as e:
             print("Error:", e)
+
+    if time.time() - led_toggle_time > 1:
+        led.toggle()
+        led_toggle_time = time.time()
 
     time.sleep(0.1)
