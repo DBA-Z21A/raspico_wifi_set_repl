@@ -9,7 +9,7 @@
       integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
       crossorigin="anonymous"
     />
-    <title>Raspberry Pi Pico W REPL</title>
+    <title>Raspberry Pi Pico W WiFi Setting by Web Serial API</title>
     <link rel="stylesheet" href="css/WebSerial.css" />
     <link rel="stylesheet" href="css/WiFiSetting.css" />
     <script type="importmap">
@@ -43,7 +43,7 @@
   </head>
 
   <body>
-    <h1>Raspberry Pi Pico W REPL</h1>
+    <h1>Raspberry Pi Pico W WiFi Setting by Web Serial API</h1>
     <div class="container-fluid">
       <form id="formWebSerial">
         <div class="row">
@@ -192,7 +192,7 @@
           };
           const doScanSSID = async function () {
             nowSendingToSerial.value = true;
-            await globalThis.webSerialManager.sendCommands(["import wifisetting", "wifisetting.scanSSID()"]);
+            await globalThis.webSerialManager.sendCommands(["import wifisetting", "wifisetting.scanSSID()", "wifisetting.get_time_from_NTP"]);
             nowSendingToSerial.value = false;
           };
           const nowSendingToSerial = ref(false);

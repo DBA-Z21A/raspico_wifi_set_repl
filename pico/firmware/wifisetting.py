@@ -6,12 +6,18 @@ import os
 from micropython import const
 from ucryptolib import aes
 import ubinascii
+import ntptime
+import time
+
 
 # AES ブロックサイズ (バイト)
 _BLOCK_SIZE = const(16)
 
 # 設定ファイル名
 _SETTING_FILE_NAME = "wifi_config.json"
+
+# NTPサーバ
+ntptime.host = "ntp.nict.jp"
 
 
 def rssi_to_stars(rssi):
@@ -118,7 +124,7 @@ def apply_wifi_config(filename=_SETTING_FILE_NAME):
     try:
         if not filename in os.listdir():
             print(f"Config file '{filename}' not found.")
-            return
+            return False
 
         config = ujson.loads(open(filename).read())
         wlan = network.WLAN(network.STA_IF)
@@ -157,11 +163,33 @@ def apply_wifi_config(filename=_SETTING_FILE_NAME):
                 print("Using DHCP.")
 
             wlan.connect(ssid, password)
-            print(f"connected {ssid}...")
+            print(f"connected {ssid}.")
+            print("IP Address:", wlan.ifconfig()[0])
+            return True
         else:
             print("SSID or encrypted password not found in configuration.")
     except Exception as e:
         print(f"Error connectiong WiFi: {e}")
+    return False
+
+
+def get_time_from_NTP():
+    """
+    WiFi接続試験を兼ねてNTPサーバに接続し内部時計を同期させる
+    """
+    apply_wifi_config()
+    wlan = network.WLAN(network.STA_IF)
+    try:
+        ntptime.settime()
+        print("datetime set from NTP")
+        year, month, day, hour, minute, second, _, _ = time.localtime()
+        print(
+            f"now datetime(UTC): {year}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}:{second:02d}"
+        )
+        wlan.active(False)
+        print("Disconnect Wi-Fi...")
+    except Exception as e:
+        print("NTP 時刻設定エラー:", e)
 
 
 # テスト用コード

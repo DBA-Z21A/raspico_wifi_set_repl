@@ -5,7 +5,7 @@ class WebSerial {
   prompt = ">>>";
   wasReceivedPrompt = true;
   promptWaitTime = 50;
-  promptTimeout = 10000;
+  promptTimeout = 20000;
 
   //このクラス自体からのメッセージ
   log_console = [];

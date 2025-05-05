@@ -1,12 +1,13 @@
 from machine import Pin
 import time
+import rp2
 
-sw = Pin(16, Pin.IN, Pin.PULL_UP)
+sw = Pin(21, Pin.IN, Pin.PULL_UP)
 beep = Pin(28, Pin.OUT)
 led = Pin("LED", Pin.OUT)
 
 while True:
-    if sw.value() == 0:
+    if rp2.bootsel_button() == 1:
         print("ボタンが押されました!")
         led.on()
         beep.on()
