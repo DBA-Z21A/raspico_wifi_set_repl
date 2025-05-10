@@ -1,16 +1,16 @@
 # Pico W WebSerial Toolkit
 
-Raspberry Pi Pico W 用の Web Serial API 通信・WiFi設定・WiFiパスワードの暗号化・HTTPアクセス・REPL制御などを一体化した MicroPython / JavaScript プロジェクトです。
-PCとUSBケーブルがあれば、専門知識のない利用者でもWiFi接続情報を設定できるようになります。
-また、Raspberry Pi Pico Wとの通信機能はHTML＋JavaScriptのみで実装していますので、サーバサイドで独自に利用者ごとの認証情報を生成・追加しRaspberry Pi Pico W側に保存させる事も可能です。
+Raspberry Pi Pico W 用の Web Serial API 通信・WiFi 設定・WiFi パスワードの暗号化・HTTP アクセス・REPL 制御などを一体化した MicroPython / JavaScript プロジェクトです。
+PC と USB ケーブルがあれば、専門知識のない利用者でも WiFi 接続情報を設定できるようになります。
+また、Raspberry Pi Pico W との通信機能は HTML ＋ JavaScript のみで実装していますので、サーバサイドで独自に利用者ごとの認証情報を生成・追加し Raspberry Pi Pico W 側に保存させる事も可能です。
 
 ## 機能一覧
 
-- Web Serial API によるブラウザからの直接通信（USB経由）
+- Web Serial API によるブラウザからの直接通信（USB 経由）
 - 暗号化された WiFi 設定ファイルの保存と復号
 - BOOTSEL ボタンを用いた安全な再設定モード
 - ソフトウェアによる REPL リセット（Ctrl+C / Ctrl+D / Ctrl+B 相当）
-- HTTPアクセスとNTPによる時刻同期
+- HTTP アクセスと NTP による時刻同期
 - MicroPython（Raspberry Pi Pico W）向けに最適化された軽量設計
 
 ## 対象環境
@@ -30,7 +30,7 @@ PCとUSBケーブルがあれば、専門知識のない利用者でもWiFi接�
 
 ## 補足資料（開発メモ・参考資料）
 
-以下のファイルは開発経緯の記録や、Blog執筆用の試作コードなどを目的に残しています。
+以下のファイルは開発経緯の記録や、Blog 執筆用の試作コードなどを目的に残しています。
 本プロジェクトの実行には不要ですが、技術的背景に関心のある方はご参照ください。
 
 - `pico/firmware/`
@@ -61,3 +61,10 @@ PCとUSBケーブルがあれば、専門知識のない利用者でもWiFi接�
 ## 作者
 
 - GitHub: [hironori maruyama](https://github.com/DBA-Z21A)
+
+## 📘 解説記事（Qiita）
+
+本プロジェクトの技術背景や実装詳細については、以下の Qiita 記事をご覧ください。
+
+👉 [MicroPython × Web Serial API で構築する、Raspberry Pi Pico W のエンドユーザー向け WiFi 初期設定]
+(https://qiita.com/your_article_url)
