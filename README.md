@@ -67,4 +67,4 @@ PC と USB ケーブルがあれば、専門知識のない利用者でも WiFi 
 本プロジェクトの技術背景や実装詳細については、以下の Qiita 記事をご覧ください。
 
 👉 [MicroPython × Web Serial API で構築する、Raspberry Pi Pico W のエンドユーザー向け WiFi 初期設定]
-(https://qiita.com/your_article_url)
+(https://qiita.com/asd_m/items/7ecf9ba27909e7bfa844)
