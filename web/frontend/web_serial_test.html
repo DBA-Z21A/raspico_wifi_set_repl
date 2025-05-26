@@ -11,31 +11,27 @@
     <ul id="portList"></ul>
 
     <script>
-      document
-        .getElementById("listPorts")
-        .addEventListener("click", async () => {
-          // ブラウザがWeb Serial APIをサポートしているか確認
-          if (!navigator.serial) {
-            alert("Web Serial APIはこのブラウザでサポートされていません。");
-            return;
-          }
+      document.getElementById("listPorts").addEventListener("click", async () => {
+        // ブラウザがWeb Serial APIをサポートしているか確認
+        if (!navigator.serial) {
+          alert("Web Serial APIはこのブラウザでサポートされていません。");
+          return;
+        }
 
-          try {
-            // ユーザーにポート選択をリクエスト
-            const ports = await navigator.serial.requestPort();
-            const portList = document.getElementById("portList");
+        try {
+          // ユーザーにポート選択をリクエスト
+          const ports = await navigator.serial.requestPort();
+          const portList = document.getElementById("portList");
 
-            // UIにポート情報を表示
-            const listItem = document.createElement("li");
-            listItem.textContent = `ポート: ${
-              ports.getInfo().usbProductId || "不明"
-            }`;
-            portList.appendChild(listItem);
-          } catch (err) {
-            console.error("ポート列挙中にエラー:", err);
-            alert("ポート列挙に失敗しました。");
-          }
-        });
+          // UIにポート情報を表示
+          const listItem = document.createElement("li");
+          listItem.textContent = `ポート: ${ports.getInfo().usbProductId || "不明"}／ベンダーID：${ports.getInfo().usbVendorId || "不明"}`;
+          portList.appendChild(listItem);
+        } catch (err) {
+          console.error("ポート列挙中にエラー:", err);
+          alert("ポート列挙に失敗しました。");
+        }
+      });
     </script>
   </body>
 </html>
